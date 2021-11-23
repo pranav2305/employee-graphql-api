@@ -8,4 +8,4 @@ const employeeSchema = new mongoose.Schema({
     projectIDs: [mongoose.Schema.Types.ObjectId]
 })
 
-module.exports = mongoose.model("Emplyee", employeeSchema);
+module.exports = mongoose.model("Employee", employeeSchema);
