@@ -12,15 +12,6 @@ module.exports = new GraphQLObjectType({
     fields: () => ({
         id: { type: GraphQLID },
         name: { type: GraphQLString },
-        projects: {
-            type: new GraphQLList(ProjectType),
-            resolve(parent, args) {
-                return Project.find({ 
-                    '_id': { $in: parent.projects} 
-                });
-            }
-        }
-    })
+        location: {type: GraphQLString}
+        })
 });
-
-const ProjectType = require("./projectType")

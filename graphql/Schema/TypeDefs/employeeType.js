@@ -21,6 +21,8 @@ module.exports = new GraphQLObjectType({
             }
         },
         salary: {type: GraphQLInt},
+        from_date: {type: GraphQLString},
+        to_date: {type: GraphQLString},
         projects: {
             type: new GraphQLList(ProjectType),
             resolve(parent, args) {

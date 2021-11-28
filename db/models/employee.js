@@ -3,9 +3,11 @@ const mongoose = require("mongoose");
 const employeeSchema = new mongoose.Schema({
     name: String,
     age: Number,
-    departmentID: mongoose.Schema.Types.ObjectId,
+    department: mongoose.Schema.Types.ObjectId,
     salary: Number,
-    projectIDs: [mongoose.Schema.Types.ObjectId]
+    from_date: String,
+    to_date: String,
+    projects: [mongoose.Schema.Types.ObjectId]
 })
 
 module.exports = mongoose.model("Employee", employeeSchema);

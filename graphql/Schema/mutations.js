@@ -4,7 +4,8 @@ const Department = require('../../db/models/department');
 const Project = require('../../db/models/project');
 const ProjectType = require('./TypeDefs/projectType');
 const EmployeeType = require("./TypeDefs/employeeType")
-const DepartmentType = require("./TypeDefs/departmentType")
+const DepartmentType = require("./TypeDefs/departmentType");
+const employee = require('../../db/models/employee');
 const { 
     GraphQLObjectType, GraphQLString, 
     GraphQLID, GraphQLInt, 
@@ -18,20 +19,58 @@ const Mutation = new GraphQLObjectType({
             type: EmployeeType,
             args: {
                 name: { type: new GraphQLNonNull(GraphQLString) },
-                age: { type: new GraphQLNonNull(GraphQLInt) },
-                department: {type: new GraphQLNonNull(GraphQLID)},
+                age: { type: GraphQLInt },
+                department: {type: GraphQLID},
                 salary: {type: GraphQLInt},
+                from_date: {type: GraphQLString},
+                to_date: {type: GraphQLString},
                 projects: {type: new GraphQLList(GraphQLID)}
             },
-            async resolve(parent, args) {
+            resolve(parent, args) {
                 let employee = new Employee({
                     name: args.name,
                     age: args.age,
-                    departmentID: args.department,
+                    department: args.department,
                     salary: args.salary,
-                    projectIDs: args.projects
+                    from_date: args.from_date,
+                    to_date: args.to_date,
+                    projects: args.projects
                 });
-                await employee.save();
+                return employee.save();
+            }
+        },
+
+        addEmployeeProject:{
+            type: EmployeeType,
+            args: {
+                id: {name: "id", type: new GraphQLNonNull(GraphQLString)},
+                title: {type: GraphQLString},
+                from_date: {type: GraphQLString},
+                to_date: {type: GraphQLString},
+                project_id: {type: GraphQLString}
+        },
+            resolve(parent, args) {
+                Employee.findById(args.id, (error, emp) => {
+                    if (error){
+                        throw error;
+                    }
+                    if (!emp) {
+                        throw new Error('Employee ' + args.id +' not found')
+                    }
+                    if (args.project_id){
+                        emp.projects.push(args.project_id)
+                    } else {
+                        let project = new Project({
+                            title: args.title,
+                            from_date: args.from_date,
+                            to_date: args.to_date
+                        });
+                        new_project = project.save();
+                        emp.projects.push(String(new_project._id))
+                    }
+                    emp.save()
+                })
+                return Employee.findById(args.id);
             }
         },
 
@@ -39,46 +78,76 @@ const Mutation = new GraphQLObjectType({
             type: EmployeeType,
             args: {
                 id: { name: "id", type: new GraphQLNonNull(GraphQLString) },
-                name: { type: new GraphQLNonNull(GraphQLString) },
+                name: { type: GraphQLString },
                 age: { type: GraphQLInt },
-                department: {type: new GraphQLNonNull(GraphQLID)},
+                department: {type: GraphQLID},
                 salary: {type: GraphQLInt},
+                from_date: { type: GraphQLString },
+                to_date: { type: GraphQLString },
                 projects: {type: new GraphQLList(GraphQLID)}
             },
             async resolve(parent, args) {
-                await Employee.findByIdAndUpdate(args.id, { name: args.name, age: args.age, departmentID: args.department, salary: args.salary, projectIDs: args.projects }, function (err) {
-                    if (err) console.log(err);
-                  });
+                await Employee.findByIdAndUpdate(args.id, { name: args.name, age: args.age, department: args.department, salary: args.salary, from_date: args.from_date, to_date: args.to_date, projects: args.projects }, (err) => {
+                    if (err){
+                        throw err;
+                    }
+                });
+                return Employee.findById(args.id);
             }
         },
 
         deleteEmployee: {
             type: EmployeeType,
             args: {
-                id: {type: new GraphQLNonNull(GraphQLString)}
+                id: {type: new GraphQLNonNull(GraphQLString)},
             },
-            async resolve(parent, args) {
+            resolve(parent, args) {
                 const remEmployee = Employee.findByIdAndRemove(args.id).exec();
-                if (!remBook) {
-                  throw new Error('Error')
+                if (!remEmployee) {
+                  throw new Error('Employee ' + args.id +' not found')
                 }
-                await remBook;
+                return remEmployee;
             }
 
+        },
+
+        deleteEmployeeProject: {
+            type: EmployeeType,
+            args: {
+                id: { name: "id", type: new GraphQLNonNull(GraphQLString) },
+                project_id: {type: new GraphQLNonNull(GraphQLString)}
+            },
+            resolve(parent, args) {
+                Employee.findById(args.id, (error, emp) => {
+                    if (error){
+                        throw error;
+                    }
+                    if (!emp) {
+                        throw new Error('Employee ' + args.id +' not found')
+                    }
+                    emp.projects.forEach(function(project){
+                        if (project == args.project_id){
+                            emp.projects.pop(project)
+                        }
+                    })
+                    emp.save()
+                })
+                return Employee.findById(args.id);
+            }
         },
 
         addDepartment: {
             type: DepartmentType,
             args: {
                 name: {type: new GraphQLNonNull(GraphQLString)},
-                projects: {type: new GraphQLList(GraphQLString)}
+                location: {type: GraphQLString}
             },
-            async resolve(parent, args) {
+            resolve(parent, args) {
                 let dept = new Department({
                 name: args.name,
-                projectIDs: args.projects,
+                location: args.location,
                 });
-                await dept.save();
+                return dept.save();
             }
 
         },
@@ -87,13 +156,16 @@ const Mutation = new GraphQLObjectType({
             type: DepartmentType,
             args: {
                 id: { name: "id", type: new GraphQLNonNull(GraphQLString) },
-                name: {type: new GraphQLNonNull(GraphQLString)},
-                projects: {type: new GraphQLList(GraphQLString)}
+                name: {type: GraphQLString},
+                location: {type: GraphQLString}
             },
             async resolve(parent, args) {
-                await Department.findByIdAndUpdate(args.id, { name: args.name, projectIDs: args.projects }, function (err) {
-                    if (err) console.log(err);
+                await Department.findByIdAndUpdate(args.id, { name: args.name, location: args.location }, (err)=>{
+                    if (err){
+                        throw err;
+                    }
                 });
+                return Department.findById(args.id);
             }
         },
 
@@ -102,12 +174,27 @@ const Mutation = new GraphQLObjectType({
             args: {
                 id: {type: GraphQLString}
             },
-            async resolve(parent, args) {
+            resolve(parent, args) {
+                Employee.find({}, (error, employees) => {
+                    if (error){
+                        throw error;
+                    }
+                    employees.map(employee => {
+                        if (String(employee.department) == args.id){
+                            employee.department = null;
+                        }
+                        employee.save(function(err){
+                            if (err){
+                                return err
+                            }
+                        })
+                    })
+                })
                 const remDept = Department.findByIdAndRemove(args.id).exec();
-                if (!remBook) {
-                  throw new Error('Error')
+                if (!remDept) {
+                  throw new Error('Department ' + args.id +' not found')
                 }
-                await remBook;
+                return remDept;
             }
         },
 
@@ -116,9 +203,9 @@ const Mutation = new GraphQLObjectType({
             args: {
                 title: {type: new GraphQLNonNull(GraphQLString)},
                 from_date: {type: new GraphQLNonNull(GraphQLString)},
-                to_date: {type: new GraphQLNonNull(GraphQLString)}
+                to_date: {type: GraphQLString}
             },
-            async resolve(parent, args) {
+            resolve(parent, args) {
                 let project = new Project({
                     title: args.title,
                     from_date: args.from_date,
@@ -132,27 +219,49 @@ const Mutation = new GraphQLObjectType({
             type: ProjectType,
             args: {
                 id: { name: "id", type: new GraphQLNonNull(GraphQLString) },
-                title: {type: new GraphQLNonNull(GraphQLString)},
-                from_date: {type: new GraphQLNonNull(GraphQLString)},
-                to_date: {type: new GraphQLNonNull(GraphQLString)}
+                title: {type: GraphQLString},
+                from_date: {type: GraphQLString},
+                to_date: {type: GraphQLString}
             },
             async resolve(parent, args) {
-                await Project.findByIdAndUpdate(args.id, { $set: { title: args.title, fromDate: args.from_date, toDate: args.to_date}})
+                await Project.findByIdAndUpdate(args.id, { $set: { title: args.title, from_date: args.from_date, to_date: args.to_date}}, (err)=>{
+                    if (err){
+                        throw err;
+                    }
+                });
+                return Project.findById(args.id);
             }
         },
 
         deleteProject: {
             type: ProjectType,
             args: {
-                id: {type: GraphQLID}
+                id: {type: GraphQLString}
             },
-            async resolve(parent, args) {
+            resolve(parent, args) {
+                Employee.find({}, (error, employees) => {
+                    if (error){
+                        throw error;
+                    }
+                    employees.map(employee => {
+                        employee.projects.forEach(function(project){
+                            if (String(project) == args.id){
+                                projects.pop(project)
+                            }
+                        })
+                        employee.save(function(err){
+                            if (err){
+                                return err
+                            }
+                        })
+                    })
+                })
                 const remProject = Project.findByIdAndRemove(args.id);
                 console.log(remProject)
                 if (!remProject) {
                   throw new Error('Error')
                 }
-                await remProject;
+                return remProject;
             }
         }
     }
