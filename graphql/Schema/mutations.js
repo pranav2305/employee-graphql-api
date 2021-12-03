@@ -55,10 +55,10 @@ const Mutation = new GraphQLObjectType({
                         throw error;
                     }
                     if (!emp) {
-                        throw new Error('Employee ' + args.id +' not found')
+                        throw new Error('Employee ' + args.id +' not found');
                     }
                     if (args.project_id){
-                        emp.projects.push(args.project_id)
+                        emp.projects.push(args.project_id);
                     } else {
                         let project = new Project({
                             title: args.title,
@@ -66,9 +66,9 @@ const Mutation = new GraphQLObjectType({
                             to_date: args.to_date
                         });
                         new_project = project.save();
-                        emp.projects.push(String(new_project._id))
+                        emp.projects.push(String(new_project._id));
                     }
-                    emp.save()
+                    emp.save();
                 })
                 return Employee.findById(args.id);
             }
@@ -86,8 +86,8 @@ const Mutation = new GraphQLObjectType({
                 to_date: { type: GraphQLString },
                 projects: {type: new GraphQLList(GraphQLID)}
             },
-            async resolve(parent, args) {
-                await Employee.findByIdAndUpdate(args.id, { name: args.name, age: args.age, department: args.department, salary: args.salary, from_date: args.from_date, to_date: args.to_date, projects: args.projects }, (err) => {
+            resolve(parent, args) {
+                Employee.findByIdAndUpdate(args.id, { name: args.name, age: args.age, department: args.department, salary: args.salary, from_date: args.from_date, to_date: args.to_date, projects: args.projects }, (err) => {
                     if (err){
                         throw err;
                     }
@@ -159,8 +159,8 @@ const Mutation = new GraphQLObjectType({
                 name: {type: GraphQLString},
                 location: {type: GraphQLString}
             },
-            async resolve(parent, args) {
-                await Department.findByIdAndUpdate(args.id, { name: args.name, location: args.location }, (err)=>{
+            resolve(parent, args) {
+                Department.findByIdAndUpdate(args.id, { name: args.name, location: args.location }, (err)=>{
                     if (err){
                         throw err;
                     }
@@ -223,8 +223,8 @@ const Mutation = new GraphQLObjectType({
                 from_date: {type: GraphQLString},
                 to_date: {type: GraphQLString}
             },
-            async resolve(parent, args) {
-                await Project.findByIdAndUpdate(args.id, { $set: { title: args.title, from_date: args.from_date, to_date: args.to_date}}, (err)=>{
+            resolve(parent, args) {
+                Project.findByIdAndUpdate(args.id, { $set: { title: args.title, from_date: args.from_date, to_date: args.to_date}}, (err)=>{
                     if (err){
                         throw err;
                     }
