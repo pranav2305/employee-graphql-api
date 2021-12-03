@@ -66,7 +66,7 @@ const Mutation = new GraphQLObjectType({
                             to_date: args.to_date
                         });
                         new_project = project.save();
-                        emp.projects.push(String(new_project._id));
+                        emp.projects.push(new_project._id);
                     }
                     emp.save();
                 })
